@@ -7,6 +7,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import sessionmaker
 from flask import jsonify
+from sqlalchemy.sql import func
+from sqlalchemy import *
 
 app = Flask(__name__)
 # config = {
@@ -62,6 +64,87 @@ def offices():
     for instance in session.query(Offices).order_by(Offices.country, Offices.state, Offices.city):
         result.append(to_dict(instance))
     return jsonify(result)
+
+@app.route('/2')
+def count_employees():
+    session = Session()
+    r = session.query(func.count(Employee.employeeNumber)).first()
+    print(r[0])
+    return str(r[0])
+
+@app.route('/payment')
+def total_payment():
+    session = Session()
+    for instance in session.query(func.sum(Payment.amount)).all():
+        return jsonify({'total': str(instance[0])})
+
+@app.route('/voitures')
+def voitures():
+    session = Session()
+    r = session.query(func.count(ProductLine.productLine)).filter(ProductLine.productLine.contains('Cars'))
+    print(r[0])
+    return str(r[0])
+
+@app.route('/totalOctobre')
+def total_octobre():
+    session = Session()
+    for instance in session.query(func.sum(Payment.amount)).filter(Payment.paymentDate == '2004-10-28'):
+        return jsonify({'total': str(instance[0])})
+
+@app.route('/sup100k')
+def sup100k():
+    session = Session()
+    result = []
+    for instance in session.query(Payment).filter(Payment.amount >= 100000):
+        result.append({"amount": str(instance.amount), "checkNumber": instance.checkNumber})
+    return jsonify(result)
+
+
+@app.route('/7')
+def seven():
+    session = Session()
+    result = []
+    for instance in session.query(ProductLine).all():
+        productLine = {'name': instance.productLine, "products": [], 'count': 0}
+        for pinstance in session.query(Product).filter(Product.productLine == instance.productLine):
+            productLine["products"].append({"name": pinstance.productName})
+        productLine['count'] = len(productLine["products"])
+        result.append(productLine)
+    return jsonify(result)
+
+
+@app.route('/9')
+def min_amount():
+    session = Session()
+    result =  session.query(func.min(Payment.amount))
+    return jsonify({'min': str(result[0])})
+
+@app.route('/10')
+def mean():
+    session = Session()
+    result = []
+    mean = session.query(func.avg(Payment.amount)).scalar()
+    for instance in session.query(Payment).filter(Payment.amount >= mean*2):
+        result.append({"amount": str(instance.amount), "checkNumber": instance.checkNumber})
+    return jsonify(result)
+
+@app.route('/12')
+def distinct():
+    result = []
+    session = Session()
+    r = session.query(func.count(Product.productCode)).first()
+    print(r[0])
+    for instance in session.query(Product.productName, Product.productCode).distinct():
+        result.append({"modelCode": str(instance.productCode), "modelName": instance.productName})
+    result.append({"nbmodel" : str(r[0])})
+    return jsonify(result)
+
+@app.route('/13')
+def treize():
+    result = []
+    session = Session()
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
