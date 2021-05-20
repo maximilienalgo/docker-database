@@ -1,0 +1,6 @@
+virtualenv
+flask==1.0.2
+flask-sqlalchemy==2.3.0
+virtualenv
+pymysql
+PyMySQL
